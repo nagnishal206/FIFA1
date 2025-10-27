@@ -1,0 +1,174 @@
+{
+  "assignment_title": "Predicting FIFA World Cup 2026 Finalists Using Machine Learning",
+  "ml_project_guide": "End-to-End Implementation based on Module 3 & 4 Syllabus",
+  "project_goal": "Predict whether a team reaches the final (Target variable: Finalist=1/Not_Finalist=0) using Logistic Regression and Random Forest.",
+  "required_imports_guide": [
+    "import pandas as pd",
+    "import numpy as np",
+    "from sklearn.model_selection import train_test_split, KFold, cross_val_score, GridSearchCV",
+    "from sklearn.linear_model import LogisticRegression",
+    "from sklearn.ensemble import RandomForestClassifier",
+    "from sklearn.preprocessing import StandardScaler, OneHotEncoder",
+    "from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, roc_curve",
+    "import matplotlib.pyplot as plt",
+    "import seaborn as sns"
+  ],
+  "tasks": [
+    {
+      "task_number": 1,
+      "task_title": "Data Collection and Preparation (EDA & Feature Engineering)",
+      "ml_concepts_used": ["Data Retrieval", "EDA", "Data Cleaning/Imputation", "Feature Engineering"],
+      "deliverables": ["Cleaned Dataset (CSV)", "Data Report (Scraper details, EDA findings)"],
+      "steps": [
+        {
+          "step_id": "1.1_Data_Acquisition_and_Scraping",
+          "action": "Simulate loading historical FIFA data and the custom-scraped data.",
+          "code_outline": "# Load main dataset (placeholder)\ndata = pd.read_csv('historical_fifa_data.csv')\n# Simulate joining with custom scraped data\n# data = pd.merge(data, scraped_data, on='Team_ID')"
+        },
+        {
+          "step_id": "1.2_EDA_and_Cleaning",
+          [cite_start]"ml_tool": "Pandas, EDA techniques [cite: 2038, 2040]",
+          "action": "Perform initial EDA (check shape, types, missing values) and apply cleaning.",
+          [cite_start]"code_outline": "# Summarize missing values\nprint(data.isnull().sum()) [cite: 2040][cite_start]\n# Drop irrelevant columns (e.g., PlayerID, Name)\ndata = data.drop(['irrelevant_cols'], axis=1) [cite: 275][cite_start]\n# Handle Missing Values (Imputation)\n# Example: Impute Age with median [cite: 254][cite_start]\ndata['Age'].fillna(data['Age'].median(), inplace=True)\n# Impute a categorical feature with mode [cite: 254][cite_start]\n# data['Embarked'].fillna(data['Embarked'].mode()[0], inplace=True)\n# Handle any duplicates [cite: 2040]\n# data.drop_duplicates(inplace=True)"
+        },
+        {
+          "step_id": "1.3_Feature_Engineering",
+          [cite_start]"ml_tool": "Pandas/Numpy for transformations [cite: 2058]",
+          "action": "Create required features and prepare data for modeling.",
+          [cite_start]"code_outline": "# 1. Target Variable Definition (Finalist)\n# Ensure a 'Finalist' column (1 or 0) exists or is derived.\n\n# 2. Key Numeric Features\n# Create Goal Difference (if not already present)\n# data['Goal_Difference'] = data['Goals_Scored'] - data['Goals_Conceded']\n# Normalize FIFA Ranking (optional, but often good practice)\n\n# 3. Categorical Encoding\ncategorical_cols = ['Confederation', 'Qualification_Status', 'some_other_cat']\ndata = pd.get_dummies(data, columns=categorical_cols, drop_first=True) [cite: 255, 484]\n\n# 4. Final Feature Set\nfeatures = ['Avg_Age', 'FIFA_Ranking', 'Goal_Difference', 'Win_Rate'] + list(data.filter(regex='Confederation|Qualification').columns)\nTarget = 'Finalist'\nX = data[features]\ny = data[Target]"
+        }
+      ]
+    },
+    {
+      "task_number": 2,
+      "task_title": "Model Building and Training",
+      "ml_concepts_used": ["Supervised Learning", "Train/Test Split", "K-Fold Cross-Validation", "Hyperparameter Tuning"],
+      "deliverables": ["Documented Code", "Summary of training/tuning"],
+      "models": ["Logistic Regression", "Random Forest Classifier"],
+      "steps": [
+        {
+          "step_id": "2.1_Train_Test_Split",
+          [cite_start]"ml_tool": "sklearn.model_selection.train_test_split [cite: 242, 457, 469]",
+          "action": "Split data into training (e.g., 80%) and testing (20%) sets.",
+          [cite_start]"code_outline": "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y) [cite: 243, 244, 457, 470, 472]"
+        },
+        {
+          "step_id": "2.2_Feature_Scaling",
+          "ml_tool": "sklearn.preprocessing.StandardScaler",
+          "action": "Scale numeric features to prevent dominance by large values, critical for Logistic Regression.",
+          "code_outline": "scaler = StandardScaler()\nX_train_scaled = scaler.fit_transform(X_train)\nX_test_scaled = scaler.transform(X_test)"
+        },
+        {
+          "step_id": "2.3_Model_Training_and_Tuning (Random Forest)",
+          [cite_start]"ml_tool": "RandomForestClassifier [cite: 245, 473][cite_start], GridSearchCV [cite: 1381]",
+          "action": "Train Random Forest. [cite_start]Tune using Grid Search for optimal performance (reduces variance/overfitting [cite: 181, 1000, 1152]).",
+          [cite_start]"code_outline": "rf_model = RandomForestClassifier(random_state=42) [cite: 245][cite_start]\n# Define parameter grid\nparam_grid = {'n_estimators': [50, 100], 'max_depth': [5, 10]} [cite: 1360, 1361, 1362][cite_start]\n# Use K-Fold CV embedded within GridSearch for robust tuning [cite: 1855, 1856, 1343][cite_start]\ngrid_search = GridSearchCV(estimator=rf_model, param_grid=param_grid, cv=5, scoring='accuracy')\ngrid_search.fit(X_train_scaled, y_train) [cite: 1381, 260]\nrf_best = grid_search.best_estimator_"
+        },
+        {
+          "step_id": "2.4_Model_Training (Logistic Regression)",
+          "ml_tool": "LogisticRegression",
+          "action": "Train the baseline Logistic Regression model.",
+          [cite_start]"code_outline": "lr_model = LogisticRegression(random_state=42)\nlr_model.fit(X_train_scaled, y_train) [cite: 260]"
+        },
+        {
+          "step_id": "2.5_KFold_Cross_Validation (Robustness Check)",
+          [cite_start]"ml_tool": "KFold, cross_val_score [cite: 1885]",
+          [cite_start]"action": "Perform 5-Fold Cross-Validation on both best models for unbiased performance estimation[cite: 1846, 1855, 1886].",
+          [cite_start]"code_outline": "# K-Fold CV for Random Forest\nkf = KFold(n_splits=5, shuffle=True, random_state=42) [cite: 1856]\nrf_cv_scores = cross_val_score(rf_best, X_train_scaled, y_train, cv=kf, scoring='accuracy')\n# K-Fold CV for Logistic Regression\nlr_cv_scores = cross_val_score(lr_model, X_train_scaled, y_train, cv=kf, scoring='accuracy')"
+        }
+      ]
+    },
+    {
+      "task_number": 3,
+      "task_title": "Model Evaluation",
+      "ml_concepts_used": ["Classification Metrics", "Confusion Matrix", "ROC-AUC"],
+      "deliverables": ["Evaluation Report (Metrics Table, Visualizations)", "Model Choice Justification"],
+      "steps": [
+        {
+          "step_id": "3.1_Prediction",
+          "action": "Generate predictions and probabilities on the unseen test set.",
+          [cite_start]"code_outline": "# Random Forest Predictions\ny_pred_rf = rf_best.predict(X_test_scaled) [cite: 261, 490]\ny_proba_rf = rf_best.predict_proba(X_test_scaled)[:, 1]\n# Logistic Regression Predictions\ny_pred_lr = lr_model.predict(X_test_scaled)\ny_proba_lr = lr_model.predict_proba(X_test_scaled)[:, 1]"
+        },
+        {
+          "step_id": "3.2_Metrics_Calculation",
+          "action": "Calculate all required metrics for both models.",
+          [cite_start]"code_outline": "# Calculate Metrics (Example for RF)\naccuracy_rf = accuracy_score(y_test, y_pred_rf) [cite: 248, 477, 491][cite_start]\nprecision_rf = precision_score(y_test, y_pred_rf) [cite: 1814][cite_start]\nrecall_rf = recall_score(y_test, y_pred_rf) [cite: 1814][cite_start]\nf1_rf = f1_score(y_test, y_pred_rf) [cite: 1814]\nroc_auc_rf = roc_auc_score(y_test, y_proba_rf)"
+        },
+        {
+          "step_id": "3.3_Confusion_Matrix_Visualization",
+          [cite_start]"ml_tool": "sklearn.metrics.confusion_matrix [cite: 1714]",
+          "action": "Generate and plot the Confusion Matrix.",
+          [cite_start]"code_outline": "# Confusion Matrix for RF\ncm_rf = confusion_matrix(y_test, y_pred_rf) [cite: 1803][cite_start]\n# Plotting using seaborn.heatmap(cm_rf, annot=True, fmt='d')\n\n# Calculate TP, TN, FP, FN from the matrix [cite: 1810, 1811, 1813, 1814]"
+        },
+        {
+          "step_id": "3.4_ROC_Curve_Visualization",
+          "action": "Generate and plot the ROC Curve.",
+          "code_outline": "# Compute ROC curve for RF\n# fpr, tpr, thresholds = roc_curve(y_test, y_proba_rf)\n# plt.plot(fpr, tpr, label=f'RF (AUC = {roc_auc_rf:.2f})')"
+        },
+        {
+          "step_id": "3.5_Model_Comparison",
+          "action": "Critically compare metrics; choose the model that best balances Precision and Recall based on the 'Finalist' context (False Negatives are costly). Justify the choice for the final prediction (Task 5)."
+        }
+      ]
+    },
+    {
+      "task_number": 4,
+      "task_title": "Feature Importance and Interpretation",
+      [cite_start]"ml_concepts_used": ["Feature Importance (Embedded Method) [cite: 300, 560]", "Domain Knowledge"],
+      "deliverables": ["Importance Visualizations", "Interpretation Note"],
+      "steps": [
+        {
+          "step_id": "4.1_Extract_Importance (Logistic Regression)",
+          "action": "Extract feature coefficients.",
+          "code_outline": "# Coefficients (Importance) for Logistic Regression\nlr_importance = pd.Series(lr_model.coef_[0], index=features).abs().sort_values(ascending=False)"
+        },
+        {
+          "step_id": "4.2_Extract_Importance (Random Forest)",
+          "action": "Extract feature importance.",
+          "code_outline": "# Feature Importance for Random Forest\nrf_importance = pd.Series(rf_best.feature_importances_, index=features).sort_values(ascending=False)"
+        },
+        {
+          "step_id": "4.3_Visualization_and_Interpretation",
+          "action": "Visualize top features and discuss practical relevance.",
+          "code_outline": "# Plot feature importance (e.g., bar plot using seaborn)\n# sns.barplot(x=rf_importance.values, y=rf_importance.index)\n\n# Discuss top features: e.g., Goal_Difference, FIFA_Ranking, Avg_Age, linking them to success."
+        }
+      ]
+    },
+    {
+      "task_number": 5,
+      "task_title": "Final Prediction and Reflection",
+      "ml_concepts_used": ["Model Deployment", "Ethical Reflection"],
+      "deliverables": ["Finalist Prediction", "Reflection on limitations"],
+      "steps": [
+        {
+          "step_id": "5.1_Final_Prediction",
+          "action": "Gather 2026 qualifier data, apply the scaler/encoder from Task 2, and use the chosen best model (e.g., 'rf_best') to predict finalists."
+        },
+        {
+          "step_id": "5.2_Reflection",
+          "action": "Write a detailed reflection covering model limitations (e.g., correlation is not causation), uncertainty, and ethical use of predictions in sports media."
+        }
+      ]
+    },
+    {
+      "task_number": 6,
+      "task_title": "Complete Application Development (Integration)",
+      "ml_concepts_used": ["MLOps (Basic)", "System Integration"],
+      "deliverables": ["Modular Application Codebase", "README/User Manual"],
+      "steps": [
+        {
+          "step_id": "6.1_Application_Structure",
+          [cite_start]"action": "Create a modular Python application (e.g., using functions for data_extraction, cleaning, training, prediction) to integrate all tasks end-to-end[cite: 1972]."
+        },
+        {
+          "step_id": "6.2_User_Interface",
+          [cite_start]"action": "Develop a command-line interface (CLI) or simple GUI to facilitate dynamic data refresh, team listing, and prediction output[cite: 1979, 1980, 1983, 1985, 1987]."
+        },
+        {
+          "step_id": "6.3_Documentation",
+          [cite_start]"action": "Document the entire application in a clear README (installation, usage, interpretation)[cite: 1991]."
+        }
+      ]
+    }
+  ]
+}

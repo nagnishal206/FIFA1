@@ -1,0 +1,14 @@
+{
+  "datasets": [],
+  "scraper_runs": [
+    {
+      "run_id": 1,
+      "timestamp": "2025-10-26T15:06:44.412821",
+      "scraper_name": "scrape_fifa_rankings",
+      "url": "https://en.wikipedia.org/wiki/FIFA_World_Rankings",
+      "records_scraped": 8,
+      "success": true,
+      "error_message": ""
+    }
+  ]
+}
